@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Red Tetris Socket Test</title>
+</head>
+<body>
+  <h1>Red Tetris Test</h1>
+
+  <input id="username" placeholder="username" value="rida">
+  <input id="room" placeholder="room" value="room1">
+
+  <button id="join">Join Room</button>
+  <button id="start">Start Game</button>
+  <button id="lose">Lose Game</button>
+
+  <pre id="logs"></pre>
+
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+  <script>
+    const log = (msg) => {
+      document.getElementById("logs").textContent += msg + "\n";
+    };
+
+    const socket = io("http://localhost:3000");
+
+    socket.on("connect", () => {
+      log("Connected: " + socket.id);
+    });
+
+    socket.on("room_updated", (data) => {
+      log("ROOM UPDATED");
+      log(JSON.stringify(data, null, 2));
+    });
+
+    socket.on("game_started", () => {
+      log("GAME STARTED");
+    });
+
+    socket.on("new_piece", (piece) => {
+      log("NEW PIECE: " + piece);
+    });
+
+    socket.on("game_over", (winnerId) => {
+      log("GAME OVER winner=" + winnerId);
+    });
+
+    socket.on("error_message", (message) => {
+      log("ERROR: " + message);
+    });
+
+    document.getElementById("join").onclick = () => {
+      socket.emit("join_room", {
+        username: document.getElementById("username").value,
+        roomId: document.getElementById("room").value,
+      });
+    };
+
+    document.getElementById("start").onclick = () => {
+      socket.emit(
+        "start_game",
+        document.getElementById("room").value
+      );
+    };
+
+    document.getElementById("lose").onclick = () => {
+      socket.emit("player_lost");
+    };
+  </script>
+</body>
+</html>
