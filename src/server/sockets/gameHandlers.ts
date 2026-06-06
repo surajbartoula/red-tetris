@@ -30,8 +30,8 @@ export function registerGameHandlers(io: TypedServer, socket: TypedSocket): void
     if (!currentRoomId) {
       return;
     }
-
     const game = gameManager.getGame(currentRoomId);
+    const newLeader = game?.removePlayer(socket.id);
 
     if (!game) {
       currentRoomId = null;
@@ -42,6 +42,9 @@ export function registerGameHandlers(io: TypedServer, socket: TypedSocket): void
     socket.leave(currentRoomId);
 
     emitRoomUpdate(currentRoomId);
+    if (newLeader) {
+        io.to(currentRoomId).emit("host_changed", newLeader.id);
+    }
     gameManager.removeEmptyGame(currentRoomId);
 
     currentRoomId = null;
@@ -83,7 +86,7 @@ export function registerGameHandlers(io: TypedServer, socket: TypedSocket): void
 
       io.to(roomId).emit("game_started");
 
-      const firstPiece = game.getNextPiece();
+      const firstPiece = game.getPiece(0);
       io.to(roomId).emit("new_piece", firstPiece);
     } catch (error) {
       socket.emit(
@@ -131,6 +134,47 @@ export function registerGameHandlers(io: TypedServer, socket: TypedSocket): void
       io.to(currentRoomId).emit("game_over", winner.id);
     }
   });
+
+  socket.on("request_next_piece", (pieceIndex: number) => {
+    if (!currentRoomId) {
+        return;
+    }
+
+    const game = gameManager.getGame(currentRoomId);
+
+    if (!game || game.status !== "playing") {
+        return;
+    }
+
+    const piece = game.getPiece(pieceIndex)
+    socket.emit("new_piece", piece);
+  });
+
+    socket.on("restart_game", (roomId) => {
+        try {
+            const game = gameManager.getGame(roomId);
+
+            if (!game) {
+            throw new Error("Room not found");
+            }
+
+            const leader = game.getLeader();
+
+            if (!leader || leader.id !== socket.id) {
+            throw new Error("Only the leader can restart the game");
+            }
+
+            game.restart();
+
+            io.to(roomId).emit("game_restarted");
+            emitRoomUpdate(roomId);
+        } catch (error) {
+            socket.emit(
+            "error_message",
+            error instanceof Error ? error.message : "Unable to restart game"
+            );
+        }
+    });
 
   socket.on("leave_room", () => {
     leaveCurrentRoom();

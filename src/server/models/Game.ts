@@ -9,7 +9,9 @@ export class Game {
   public players: Player[];
   public status: GameStatus;
   private pieceGenerator: PieceGenerator;
-
+  private pieceSequence: PieceType[] = [];
+  private currentPieceIndex = 0;
+  
   constructor(roomId: string) {
     this.roomId = roomId;
     this.players = [];
@@ -21,6 +23,13 @@ export class Game {
     if (this.status === "playing") {
       throw new Error("Cannot join a game that has already started");
     }
+    if (
+        this.players.some(
+        (player) => player.username.toLowerCase() === username.toLowerCase()
+        )
+    ) {
+        throw new Error("Username already taken in this room");
+    }
 
     const isLeader = this.players.length === 0;
     const player = new Player(id, username, isLeader);
@@ -29,13 +38,32 @@ export class Game {
     return player;
   }
 
-  public removePlayer(playerId: string): void {
+  public removePlayer(playerId: string): Player | null {
+    const removedPlayer = this.players.find((player) => player.id === playerId);
+
     this.players = this.players.filter((player) => player.id !== playerId);
 
-    if (this.players.length > 0 && !this.players.some((player) => player.isLeader)) {
-      this.players[0]?.makeLeader();
+    if (!removedPlayer) {
+        return null;
     }
-  }
+
+    if (this.players.length > 0 && !this.players.some((player) => player.isLeader)) {
+        this.players[0]?.makeLeader();
+        return this.players[0] ?? null;
+    }
+
+    return null;
+    }
+
+    public getPiece(index: number): PieceType {
+        while (index >= this.pieceSequence.length) {
+            this.pieceSequence.push(
+            this.pieceGenerator.getNextPiece()
+            );
+        }
+
+        return this.pieceSequence[index]!;
+    }
 
   public start(): void {
     if (this.players.length === 0) {

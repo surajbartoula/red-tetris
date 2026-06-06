@@ -13,7 +13,10 @@
   <button id="join">Join Room</button>
   <button id="start">Start Game</button>
   <button id="lose">Lose Game</button>
-
+  <button id="nextPiece">Next Piece</button>
+  <button id="restart">Restart Game</button>
+  <button id="clearLines">Clear 4 Lines</button>
+  
   <pre id="logs"></pre>
 
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
@@ -67,6 +70,31 @@
     document.getElementById("lose").onclick = () => {
       socket.emit("player_lost");
     };
+
+    // document.getElementById("nextPiece").onclick = () => {
+    //   socket.emit("request_next_piece");
+    // };
+    document.getElementById("restart").onclick = () => {
+      socket.emit("restart_game", document.getElementById("room").value);
+    };
+    socket.on("game_restarted", () => {
+      log("GAME RESTARTED");
+    });
+    let pieceIndex = 1;
+
+    document.getElementById("nextPiece").onclick = () => {
+      log("REQUEST PIECE INDEX: " + pieceIndex);
+      socket.emit("request_next_piece", pieceIndex);
+      pieceIndex++;
+    };
+
+    document.getElementById("clearLines").onclick = () => {
+      socket.emit("lines_cleared", 4);
+    };
+
+    socket.on("receive_penalty", (lines) => {
+      log("RECEIVE PENALTY: " + lines);
+    });
   </script>
 </body>
 </html>

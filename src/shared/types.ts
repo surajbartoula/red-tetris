@@ -26,6 +26,8 @@ export interface ServerToClientEvents {
 
   host_changed: (playerId: string) => void;
 
+  game_restarted: () => void;
+
   player_left: (playerId: string) => void;
 
   new_piece: (piece: PieceType) => void;
@@ -57,4 +59,8 @@ export interface ClientToServerEvents {
   update_spectrum: (spectrum: Spectrum) => void;
 
   lines_cleared: (count: number) => void;
+
+  request_next_piece: (pieceIndex: number) => void;
+
+  restart_game: (roomId: string) => void;
 }
