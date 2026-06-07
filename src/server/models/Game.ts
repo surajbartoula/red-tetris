@@ -66,8 +66,12 @@ export class Game {
     }
 
   public start(): void {
+    if (this.status === "playing") {
+        throw new Error("Game already started");
+    }
+
     if (this.players.length === 0) {
-      throw new Error("Cannot start an empty game");
+        throw new Error("Cannot start an empty game");
     }
 
     this.status = "playing";
@@ -75,7 +79,9 @@ export class Game {
 
   public restart(): void {
     this.status = "waiting";
+
     this.pieceGenerator = new PieceGenerator();
+    this.pieceSequence = [];
 
     this.players.forEach((player, index) => {
       player.alive = true;

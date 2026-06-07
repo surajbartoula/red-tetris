@@ -52,6 +52,9 @@ export function registerGameHandlers(io: TypedServer, socket: TypedSocket): void
 
   socket.on("join_room", ({ username, roomId }) => {
     try {
+        if (currentRoomId) {
+            throw new Error("You are already in a room");
+        }
       const game = gameManager.getOrCreateGame(roomId);
 
       game.addPlayer(socket.id, username);

@@ -16,7 +16,8 @@
   <button id="nextPiece">Next Piece</button>
   <button id="restart">Restart Game</button>
   <button id="clearLines">Clear 4 Lines</button>
-  
+  <button id="spectrum">Send Spectrum</button>
+
   <pre id="logs"></pre>
 
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
@@ -94,6 +95,18 @@
 
     socket.on("receive_penalty", (lines) => {
       log("RECEIVE PENALTY: " + lines);
+    });
+
+    document.getElementById("spectrum").onclick = () => {
+      socket.emit(
+        "update_spectrum",
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+      );
+    };
+
+    socket.on("spectrum_updated", (data) => {
+      log("SPECTRUM UPDATED");
+      log(JSON.stringify(data, null, 2));
     });
   </script>
 </body>
