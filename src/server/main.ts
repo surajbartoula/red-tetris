@@ -13,17 +13,17 @@ const server = http.createServer(app);
 createSocketServer(server);
 
 if (process.env["NODE_ENV"] === "production") {
-  app.use(express.static(path.join(__dirname, "../../dist")));
-  
-  app.get("*", (_req, res) => {
-    res.sendFile(path.join(__dirname, "../../dist/index.html"));
-  });
+	app.use(express.static(path.join(__dirname, "../../dist")));
+
+	app.get("*", (_req, res) => {
+		res.sendFile(path.join(__dirname, "../../dist/index.html"));
+	});
 }
 
 const PORT = process.env["PORT"] || 3000;
 
 server.listen(PORT, () => {
-  console.log(`===================================================`);
-  console.log(`🚀 Red Tetris Server listening on http://0.0.0.0:${PORT}`);
-  console.log(`===================================================`);
+	console.log(`===================================================`);
+	console.log(`🚀 Red Tetris Server listening on http://0.0.0.0:${PORT}`);
+	console.log(`===================================================`);
 });

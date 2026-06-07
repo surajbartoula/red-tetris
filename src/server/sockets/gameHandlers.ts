@@ -1,189 +1,189 @@
 import type { Socket, Server } from "socket.io";
 
 import { gameManager } from "../services/GameManager";
-import type {
-  ClientToServerEvents,
-  ServerToClientEvents,
-  Spectrum,
-} from "../../shared/types";
+import type { ClientToServerEvents, ServerToClientEvents, Spectrum } from "../../shared/types";
 
 type TypedServer = Server<ClientToServerEvents, ServerToClientEvents>;
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
 
 export function registerGameHandlers(io: TypedServer, socket: TypedSocket): void {
-  let currentRoomId: string | null = null;
+	let currentRoomId: string | null = null;
 
-  const emitRoomUpdate = (roomId: string): void => {
-    const game = gameManager.getGame(roomId);
+	const emitRoomUpdate = (roomId: string): void => {
+		const game = gameManager.getGame(roomId);
 
-    if (!game) {
-      return;
-    }
+		if (!game) {
+			return;
+		}
 
-    io.to(roomId).emit("room_updated", {
-      roomId,
-      players: game.getPlayersState(),
-    });
-  };
+		io.to(roomId).emit("room_updated", {
+			roomId,
+			players: game.getPlayersState(),
+		});
+	};
+	const leaveCurrentRoom = (): void => {
+		if (!currentRoomId) {
+			return;
+		}
 
-  const leaveCurrentRoom = (): void => {
-    if (!currentRoomId) {
-      return;
-    }
-    const game = gameManager.getGame(currentRoomId);
-    const newLeader = game?.removePlayer(socket.id);
+		const roomId = currentRoomId;
+		const game = gameManager.getGame(roomId);
 
-    if (!game) {
-      currentRoomId = null;
-      return;
-    }
+		if (!game) {
+			currentRoomId = null;
+			return;
+		}
 
-    game.removePlayer(socket.id);
-    socket.leave(currentRoomId);
+		const newLeader = game.removePlayer(socket.id);
 
-    emitRoomUpdate(currentRoomId);
-    if (newLeader) {
-        io.to(currentRoomId).emit("host_changed", newLeader.id);
-    }
-    gameManager.removeEmptyGame(currentRoomId);
+		socket.to(roomId).emit("player_left", socket.id);
 
-    currentRoomId = null;
-  };
+		socket.leave(roomId);
 
-  socket.on("join_room", ({ username, roomId }) => {
-    try {
-        if (currentRoomId) {
-            throw new Error("You are already in a room");
-        }
-      const game = gameManager.getOrCreateGame(roomId);
+		emitRoomUpdate(roomId);
 
-      game.addPlayer(socket.id, username);
-      socket.join(roomId);
+		if (newLeader) {
+			io.to(roomId).emit("host_changed", newLeader.id);
+		}
 
-      currentRoomId = roomId;
+		gameManager.removeEmptyGame(roomId);
 
-      emitRoomUpdate(roomId);
-    } catch (error) {
-      socket.emit(
-        "error_message",
-        error instanceof Error ? error.message : "Unable to join room"
-      );
-    }
-  });
+		currentRoomId = null;
+	};
+	socket.on("join_room", ({ username, roomId }) => {
+		try {
+			if (currentRoomId) {
+				throw new Error("You are already in a room");
+			}
+			const game = gameManager.getOrCreateGame(roomId);
 
-  socket.on("start_game", (roomId) => {
-    try {
-      const game = gameManager.getGame(roomId);
+			game.addPlayer(socket.id, username);
+			socket.join(roomId);
 
-      if (!game) {
-        throw new Error("Room not found");
-      }
+			currentRoomId = roomId;
 
-      const leader = game.getLeader();
+			emitRoomUpdate(roomId);
+		} catch (error) {
+			socket.emit(
+				"error_message",
+				error instanceof Error ? error.message : "Unable to join room"
+			);
+		}
+	});
 
-      if (!leader || leader.id !== socket.id) {
-        throw new Error("Only the leader can start the game");
-      }
+	socket.on("start_game", (roomId) => {
+		try {
+			const game = gameManager.getGame(roomId);
 
-      game.start();
+			if (!game) {
+				throw new Error("Room not found");
+			}
 
-      io.to(roomId).emit("game_started");
+			const leader = game.getLeader();
 
-      const firstPiece = game.getPiece(0);
-      io.to(roomId).emit("new_piece", firstPiece);
-    } catch (error) {
-      socket.emit(
-        "error_message",
-        error instanceof Error ? error.message : "Unable to start game"
-      );
-    }
-  });
+			if (!leader || leader.id !== socket.id) {
+				throw new Error("Only the leader can start the game");
+			}
 
-  socket.on("update_spectrum", (spectrum: Spectrum) => {
-    if (!currentRoomId) {
-      return;
-    }
+			game.start();
 
-    socket.to(currentRoomId).emit("spectrum_updated", {
-      playerId: socket.id,
-      spectrum,
-    });
-  });
+			io.to(roomId).emit("game_started");
 
-  socket.on("lines_cleared", (count) => {
-    if (!currentRoomId || count <= 1) {
-      return;
-    }
+			const firstPiece = game.getPiece(0);
+			io.to(roomId).emit("new_piece", firstPiece);
+		} catch (error) {
+			socket.emit(
+				"error_message",
+				error instanceof Error ? error.message : "Unable to start game"
+			);
+		}
+	});
 
-    socket.to(currentRoomId).emit("receive_penalty", count - 1);
-  });
+	socket.on("update_spectrum", (spectrum: Spectrum) => {
+		if (!currentRoomId) {
+			return;
+		}
 
-  socket.on("player_lost", () => {
-    if (!currentRoomId) {
-      return;
-    }
+		socket.to(currentRoomId).emit("spectrum_updated", {
+			playerId: socket.id,
+			spectrum,
+		});
+	});
 
-    const game = gameManager.getGame(currentRoomId);
+	socket.on("lines_cleared", (count) => {
+		if (!currentRoomId || count <= 1) {
+			return;
+		}
 
-    if (!game) {
-      return;
-    }
+		socket.to(currentRoomId).emit("receive_penalty", count - 1);
+	});
 
-    const winner = game.eliminatePlayer(socket.id);
+	socket.on("player_lost", () => {
+		if (!currentRoomId) {
+			return;
+		}
 
-    emitRoomUpdate(currentRoomId);
+		const game = gameManager.getGame(currentRoomId);
 
-    if (winner) {
-      io.to(currentRoomId).emit("game_over", winner.id);
-    }
-  });
+		if (!game) {
+			return;
+		}
 
-  socket.on("request_next_piece", (pieceIndex: number) => {
-    if (!currentRoomId) {
-        return;
-    }
+		const winner = game.eliminatePlayer(socket.id);
 
-    const game = gameManager.getGame(currentRoomId);
+		emitRoomUpdate(currentRoomId);
 
-    if (!game || game.status !== "playing") {
-        return;
-    }
+		if (winner) {
+			io.to(currentRoomId).emit("game_over", winner.id);
+		}
+	});
 
-    const piece = game.getPiece(pieceIndex)
-    socket.emit("new_piece", piece);
-  });
+	socket.on("request_next_piece", (pieceIndex: number) => {
+		if (!currentRoomId) {
+			return;
+		}
 
-    socket.on("restart_game", (roomId) => {
-        try {
-            const game = gameManager.getGame(roomId);
+		const game = gameManager.getGame(currentRoomId);
 
-            if (!game) {
-            throw new Error("Room not found");
-            }
+		if (!game || game.status !== "playing") {
+			return;
+		}
 
-            const leader = game.getLeader();
+		const piece = game.getPiece(pieceIndex);
+		socket.emit("new_piece", piece);
+	});
 
-            if (!leader || leader.id !== socket.id) {
-            throw new Error("Only the leader can restart the game");
-            }
+	socket.on("restart_game", (roomId) => {
+		try {
+			const game = gameManager.getGame(roomId);
 
-            game.restart();
+			if (!game) {
+				throw new Error("Room not found");
+			}
 
-            io.to(roomId).emit("game_restarted");
-            emitRoomUpdate(roomId);
-        } catch (error) {
-            socket.emit(
-            "error_message",
-            error instanceof Error ? error.message : "Unable to restart game"
-            );
-        }
-    });
+			const leader = game.getLeader();
 
-  socket.on("leave_room", () => {
-    leaveCurrentRoom();
-  });
+			if (!leader || leader.id !== socket.id) {
+				throw new Error("Only the leader can restart the game");
+			}
 
-  socket.on("disconnect", () => {
-    leaveCurrentRoom();
-  });
+			game.restart();
+
+			io.to(roomId).emit("game_restarted");
+			emitRoomUpdate(roomId);
+		} catch (error) {
+			socket.emit(
+				"error_message",
+				error instanceof Error ? error.message : "Unable to restart game"
+			);
+		}
+	});
+
+	socket.on("leave_room", () => {
+		leaveCurrentRoom();
+	});
+
+	socket.on("disconnect", () => {
+		leaveCurrentRoom();
+	});
 }

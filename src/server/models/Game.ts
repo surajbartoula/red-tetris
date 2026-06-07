@@ -5,118 +5,109 @@ import type { PieceType, PlayerState } from "../../shared/types";
 export type GameStatus = "waiting" | "playing" | "finished";
 
 export class Game {
-  public readonly roomId: string;
-  public players: Player[];
-  public status: GameStatus;
-  private pieceGenerator: PieceGenerator;
-  private pieceSequence: PieceType[] = [];
-  private currentPieceIndex = 0;
-  
-  constructor(roomId: string) {
-    this.roomId = roomId;
-    this.players = [];
-    this.status = "waiting";
-    this.pieceGenerator = new PieceGenerator();
-  }
+	public readonly roomId: string;
+	public players: Player[];
+	public status: GameStatus;
+	private pieceGenerator: PieceGenerator;
+	private pieceSequence: PieceType[] = [];
 
-  public addPlayer(id: string, username: string): Player {
-    if (this.status === "playing") {
-      throw new Error("Cannot join a game that has already started");
-    }
-    if (
-        this.players.some(
-        (player) => player.username.toLowerCase() === username.toLowerCase()
-        )
-    ) {
-        throw new Error("Username already taken in this room");
-    }
+	constructor(roomId: string) {
+		this.roomId = roomId;
+		this.players = [];
+		this.status = "waiting";
+		this.pieceGenerator = new PieceGenerator();
+	}
 
-    const isLeader = this.players.length === 0;
-    const player = new Player(id, username, isLeader);
+	public addPlayer(id: string, username: string): Player {
+		if (this.status === "playing") {
+			throw new Error("Cannot join a game that has already started");
+		}
+		if (
+			this.players.some((player) => player.username.toLowerCase() === username.toLowerCase())
+		) {
+			throw new Error("Username already taken in this room");
+		}
 
-    this.players.push(player);
-    return player;
-  }
+		const isLeader = this.players.length === 0;
+		const player = new Player(id, username, isLeader);
 
-  public removePlayer(playerId: string): Player | null {
-    const removedPlayer = this.players.find((player) => player.id === playerId);
+		this.players.push(player);
+		return player;
+	}
 
-    this.players = this.players.filter((player) => player.id !== playerId);
+	public removePlayer(playerId: string): Player | null {
+		const removedPlayer = this.players.find((player) => player.id === playerId);
 
-    if (!removedPlayer) {
-        return null;
-    }
+		this.players = this.players.filter((player) => player.id !== playerId);
 
-    if (this.players.length > 0 && !this.players.some((player) => player.isLeader)) {
-        this.players[0]?.makeLeader();
-        return this.players[0] ?? null;
-    }
+		if (!removedPlayer) {
+			return null;
+		}
 
-    return null;
-    }
+		if (this.players.length > 0 && !this.players.some((player) => player.isLeader)) {
+			this.players[0]?.makeLeader();
+			return this.players[0] ?? null;
+		}
 
-    public getPiece(index: number): PieceType {
-        while (index >= this.pieceSequence.length) {
-            this.pieceSequence.push(
-            this.pieceGenerator.getNextPiece()
-            );
-        }
+		return null;
+	}
 
-        return this.pieceSequence[index]!;
-    }
+	public getPiece(index: number): PieceType {
+		while (index >= this.pieceSequence.length) {
+			this.pieceSequence.push(this.pieceGenerator.getNextPiece());
+		}
 
-  public start(): void {
-    if (this.status === "playing") {
-        throw new Error("Game already started");
-    }
+		return this.pieceSequence[index]!;
+	}
 
-    if (this.players.length === 0) {
-        throw new Error("Cannot start an empty game");
-    }
+	public start(): void {
+		if (this.status === "playing") {
+			throw new Error("Game already started");
+		}
 
-    this.status = "playing";
-  }
+		if (this.players.length === 0) {
+			throw new Error("Cannot start an empty game");
+		}
 
-  public restart(): void {
-    this.status = "waiting";
+		this.status = "playing";
+	}
 
-    this.pieceGenerator = new PieceGenerator();
-    this.pieceSequence = [];
+	public restart(): void {
+		this.status = "waiting";
 
-    this.players.forEach((player, index) => {
-      player.alive = true;
-      player.isLeader = index === 0;
-    });
-  }
+		this.pieceGenerator = new PieceGenerator();
+		this.pieceSequence = [];
 
-  public getNextPiece(): PieceType {
-    return this.pieceGenerator.getNextPiece();
-  }
+		this.players.forEach((player, index) => {
+			player.alive = true;
+			player.isLeader = index === 0;
+		});
+	}
 
-  public eliminatePlayer(playerId: string): Player | null {
-    const player = this.players.find((currentPlayer) => currentPlayer.id === playerId);
+	public eliminatePlayer(playerId: string): Player | null {
+		const player = this.players.find((currentPlayer) => currentPlayer.id === playerId);
 
-    if (!player) {
-      return null;
-    }
+		if (!player) {
+			return null;
+		}
 
-    player.eliminate();
+		player.eliminate();
 
-    const alivePlayers = this.players.filter((currentPlayer) => currentPlayer.alive);
+		const alivePlayers = this.players.filter((currentPlayer) => currentPlayer.alive);
 
-    if (alivePlayers.length <= 1) {
-      this.status = "finished";
-      return alivePlayers[0] ?? null;
-    }
+		if (alivePlayers.length <= 1) {
+			this.status = "finished";
+			return alivePlayers[0] ?? null;
+		}
 
-    return null;
-  }
+		return null;
+	}
 
-  public getPlayersState(): PlayerState[] {
-    return this.players.map((player) => player.toState());
-  }
+	public getPlayersState(): PlayerState[] {
+		return this.players.map((player) => player.toState());
+	}
 
-  public getLeader(): Player | undefined {
-    return this.players.find((player) => player.isLeader);
-  }
+	public getLeader(): Player | undefined {
+		return this.players.find((player) => player.isLeader);
+	}
 }
