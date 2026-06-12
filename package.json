@@ -1,43 +1,46 @@
 {
-  "name": "red-tetris",
-  "version": "1.0.0",
-  "description": "Multiplayer Red-tetris game",
-  "license": "ISC",
-  "author": "Suraj Bartoula",
-  "type": "module",
-  "main": "index.js",
-  "scripts": {
-    "client-dev": "vite",
-    "client-dist": "vite build",
-    "srv-dev": "tsx watch src/server/main.ts",
-    "start": "NODE_ENV=production node src/server/main.ts",
-    "test": "vitest run",
-    "coverage": "vitest run --coverage",
-    "format": "prettier --write src"
-  },
-  "dependencies": {
-    "@reduxjs/toolkit": "^2.12.0",
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "react-redux": "^9.3.0",
-    "socket.io": "^4.8.3",
-    "socket.io-client": "^4.8.3"
-  },
-  "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/node": "^25.9.1",
-    "@types/react": "^19.2.16",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.2",
-    "@vitest/coverage-v8": "^4.1.8",
-    "jsdom": "^29.1.1",
-    "prettier": "^3.8.3",
-    "tsx": "^4.22.4",
-    "typescript": "^6.0.3",
-    "vite": "^8.0.16",
-    "vitest": "^4.1.8"
-  }
+	"name": "red-tetris",
+	"version": "1.0.0",
+	"description": "Multiplayer Red-tetris game",
+	"license": "ISC",
+	"author": "Suraj Bartoula",
+	"type": "module",
+	"main": "index.js",
+	"scripts": {
+		"dev": "concurrently \"npm run srv-dev\" \"npm run client-dev\"",
+		"client-dev": "vite",
+		"client-dist": "vite build",
+		"srv-dev": "tsx watch src/server/main.ts",
+		"start": "NODE_ENV=production node src/server/main.ts",
+		"test": "vitest run",
+		"coverage": "vitest run --coverage",
+		"format": "prettier --write src"
+	},
+	"dependencies": {
+		"@reduxjs/toolkit": "^2.12.0",
+		"cors": "^2.8.6",
+		"express": "^5.2.1",
+		"react": "^19.2.7",
+		"react-dom": "^19.2.7",
+		"react-redux": "^9.3.0",
+		"react-router-dom": "^7.17.0",
+		"socket.io": "^4.8.3",
+		"socket.io-client": "^4.8.3"
+	},
+	"devDependencies": {
+		"@types/cors": "^2.8.19",
+		"@types/express": "^5.0.6",
+		"@types/node": "^25.9.1",
+		"@types/react": "^19.2.16",
+		"@types/react-dom": "^19.2.3",
+		"@vitejs/plugin-react": "^6.0.2",
+		"@vitest/coverage-v8": "^4.1.8",
+		"concurrently": "^10.0.3",
+		"jsdom": "^29.1.1",
+		"prettier": "^3.8.3",
+		"tsx": "^4.22.4",
+		"typescript": "^6.0.3",
+		"vite": "^8.0.16",
+		"vitest": "^4.1.8"
+	}
 }
