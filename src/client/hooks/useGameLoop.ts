@@ -1,43 +1,56 @@
 import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import type { RootState } from "../store";
+import type { AppDispatch, RootState } from "../store";
 import { lockPiece, tick } from "../store/gameSlice";
-import { isValidPosition } from "../game/board";
-import { socket } from "../socket/socket";
-import { computeSpectrum } from "../game/board";
+import { isValidPosition, computeSpectrum } from "../game/board";
 import { TICK_INTERVAL_MS } from "../game/constants";
+import {
+	requestPiece,
+	updateSpectrumAction,
+	playerLost,
+	linesCleared,
+} from "../socket/socketMiddleware";
 
 export const useGameLoop = () => {
-	const dispatch = useDispatch();
+	const dispatch = useDispatch<AppDispatch>();
 	const status = useSelector((s: RootState) => s.game.status);
 	const activePiece = useSelector((s: RootState) => s.game.activePiece);
 	const board = useSelector((s: RootState) => s.game.board);
 	const pieceIndex = useSelector((s: RootState) => s.game.pieceIndex);
-	const roomId = useSelector((s: RootState) => s.room.roomId);
+	const lastLinesCleared = useSelector((s: RootState) => (s.game as any)._lastLinesCleared ?? 0);
 
 	const lastTickRef = useRef<number>(0);
 	const rafRef = useRef<number>(0);
+	const prevLinesRef = useRef<number>(0);
 
-	// Request next piece whenever pieceIndex changes
-	useEffect(() => {
-		if (status !== "playing" || !roomId) return;
-		socket.emit("request_next_piece", pieceIndex);
-	}, [pieceIndex, status, roomId]);
-
-	// Emit spectrum whenever board changes
+	// Request next piece when pieceIndex advances
 	useEffect(() => {
 		if (status !== "playing") return;
-		const spectrum = computeSpectrum(board);
-		socket.emit("update_spectrum", spectrum);
-	}, [board, status]);
+		dispatch(requestPiece(pieceIndex));
+	}, [pieceIndex, status, dispatch]);
+
+	// Emit spectrum on every board change
+	useEffect(() => {
+		if (status !== "playing") return;
+		dispatch(updateSpectrumAction(computeSpectrum(board)));
+	}, [board, status, dispatch]);
+
+	// Notify server on lines cleared
+	useEffect(() => {
+		if (lastLinesCleared > 0 && lastLinesCleared !== prevLinesRef.current) {
+			prevLinesRef.current = lastLinesCleared;
+			dispatch(linesCleared(lastLinesCleared));
+		}
+	}, [lastLinesCleared, dispatch]);
 
 	// Notify server on loss
 	useEffect(() => {
-		if (status === "lost" && roomId) {
-			socket.emit("player_lost");
+		if (status === "lost") {
+			dispatch(playerLost());
 		}
-	}, [status, roomId]);
+	}, [status, dispatch]);
 
+	// Game tick loop
 	useEffect(() => {
 		if (status !== "playing") return;
 
@@ -57,7 +70,6 @@ export const useGameLoop = () => {
 					}
 				}
 			}
-
 			rafRef.current = requestAnimationFrame(loop);
 		};
 

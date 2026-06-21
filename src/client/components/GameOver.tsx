@@ -1,8 +1,9 @@
-import { useSelector } from "react-redux";
-import type { RootState } from "../store";
-import { socket } from "../socket/socket";
+import { useSelector, useDispatch } from "react-redux";
+import type { RootState, AppDispatch } from "../store";
+import { restartGameAction } from "../socket/socketMiddleware";
 
 export const GameOver = () => {
+	const dispatch = useDispatch<AppDispatch>();
 	const status = useSelector((s: RootState) => s.game.status);
 	const winnerId = useSelector((s: RootState) => s.game.winnerId);
 	const myId = useSelector((s: RootState) => s.room.myId);
@@ -14,10 +15,6 @@ export const GameOver = () => {
 
 	const winner = players.find((p) => p.id === winnerId);
 	const iWon = winnerId === myId;
-
-	const handleRestart = () => {
-		if (roomId) socket.emit("restart_game", roomId);
-	};
 
 	return (
 		<div
@@ -48,9 +45,9 @@ export const GameOver = () => {
 					{winner.username} wins!
 				</div>
 			)}
-			{isLeader && (
+			{isLeader ? (
 				<button
-					onClick={handleRestart}
+					onClick={() => roomId && dispatch(restartGameAction(roomId))}
 					style={{
 						padding: "12px 32px",
 						background: "#00f0f0",
@@ -64,8 +61,7 @@ export const GameOver = () => {
 				>
 					Play Again
 				</button>
-			)}
-			{!isLeader && (
+			) : (
 				<div style={{ color: "#666", fontFamily: "monospace", fontSize: 14 }}>
 					Waiting for host to restart…
 				</div>

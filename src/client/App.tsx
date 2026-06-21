@@ -1,35 +1,26 @@
 import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, useParams, Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { socket } from "./socket/socket";
-import { setRoom, setError } from "./store/roomSlice";
-import type { RootState } from "./store";
+import type { RootState, AppDispatch } from "./store";
+import { setPending } from "./store/roomSlice";
 import { LobbyPage } from "./pages/LobbyPage";
 import { GamePage } from "./pages/GamePage";
-import { useSocket } from "./hooks/useSocket";
+import { joinRoom, leaveRoom } from "./socket/socketMiddleware";
 
 const RoomRoute = () => {
 	const { room, playerName } = useParams<{ room: string; playerName: string }>();
-	const dispatch = useDispatch();
+	const dispatch = useDispatch<AppDispatch>();
 	const gameStatus = useSelector((s: RootState) => s.game.status);
 	const error = useSelector((s: RootState) => s.room.error);
-
-	useSocket();
 
 	useEffect(() => {
 		if (!room || !playerName) return;
 
-		socket.connect();
-
-		socket.on("connect", () => {
-			dispatch(setRoom({ roomId: room, myId: socket.id! }));
-			socket.emit("join_room", { roomId: room, username: playerName });
-		});
+		dispatch(setPending({ roomId: room, username: playerName }));
+		dispatch(joinRoom(room, playerName));
 
 		return () => {
-			socket.off("connect");
-			socket.emit("leave_room");
-			socket.disconnect();
+			dispatch(leaveRoom());
 		};
 	}, [room, playerName, dispatch]);
 

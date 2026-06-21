@@ -1,17 +1,17 @@
-import { useSelector } from "react-redux";
-import type { RootState } from "../store";
+import { useSelector, useDispatch } from "react-redux";
+import type { RootState, AppDispatch } from "../store";
 import { PlayerList } from "../components/PlayerList";
-import { socket } from "../socket/socket";
+import { startGameAction } from "../socket/socketMiddleware";
 
 export const LobbyPage = () => {
+	const dispatch = useDispatch<AppDispatch>();
 	const roomId = useSelector((s: RootState) => s.room.roomId);
 	const myId = useSelector((s: RootState) => s.room.myId);
 	const players = useSelector((s: RootState) => s.room.players);
-
 	const isLeader = players.find((p) => p.id === myId)?.isLeader;
 
 	const handleStart = () => {
-		if (roomId) socket.emit("start_game", roomId);
+		if (roomId) dispatch(startGameAction(roomId));
 	};
 
 	return (
@@ -28,11 +28,9 @@ export const LobbyPage = () => {
 			}}
 		>
 			<div style={{ fontSize: 40, color: "#f00000", letterSpacing: 4 }}>RED TETRIS</div>
-
 			<div style={{ color: "#555", fontSize: 14 }}>
 				Room: <span style={{ color: "#00f0f0" }}>{roomId}</span>
 			</div>
-
 			<div
 				style={{
 					minWidth: 280,
@@ -55,7 +53,6 @@ export const LobbyPage = () => {
 				</div>
 				<PlayerList />
 			</div>
-
 			{isLeader ? (
 				<button
 					onClick={handleStart}
