@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route, useParams, Navigate } from "react-router-dom";
+import { Routes, Route, useParams, Navigate, HashRouter } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "./store";
 import { setPending } from "./store/roomSlice";
@@ -53,7 +53,7 @@ const RoomRoute = () => {
 };
 
 export const App = () => (
-	<BrowserRouter>
+	<HashRouter>
 		<Routes>
 			<Route path="/:room/:playerName" element={<RoomRoute />} />
 			<Route
@@ -74,12 +74,29 @@ export const App = () => (
 					>
 						<div style={{ fontSize: 40, color: "#f00000" }}>RED TETRIS</div>
 						<div>
-							Navigate to <span style={{ color: "#00f0f0" }}>/:room/:playerName</span>{" "}
-							to play
+							Navigate to{" "}
+							<span style={{ color: "#00f0f0" }}>/#/:room/:playerName</span> to play
+							<button
+								onClick={() => {
+									window.location.hash = "#/room1/alice";
+								}}
+								style={{
+									padding: "10px 18px",
+									marginTop: "16px",
+									background: "inherit",
+									color: "#00f0f0",
+									border: "none",
+									borderRadius: "6px",
+									cursor: "pointer",
+									fontWeight: "bold",
+								}}
+							>
+								Try Example
+							</button>
 						</div>
 					</div>
 				}
 			/>
 		</Routes>
-	</BrowserRouter>
+	</HashRouter>
 );

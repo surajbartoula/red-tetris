@@ -14,7 +14,8 @@
 		"start": "NODE_ENV=production node src/server/main.ts",
 		"test": "vitest run",
 		"coverage": "vitest run --coverage",
-		"format": "prettier --write src"
+		"format": "prettier --write src",
+		"coverage:open": "vitest run --coverage && xdg-open coverage/index.html"
 	},
 	"dependencies": {
 		"@reduxjs/toolkit": "^2.12.0",
