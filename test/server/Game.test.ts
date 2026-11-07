@@ -179,4 +179,44 @@ describe("Game", () => {
 			expect(game.getLeader()).toBeUndefined();
 		});
 	});
+
+	describe("checkWinnerAfterLeave", () => {
+		it("return the remaining player when one of two leaves mid-game", () => {
+			game.addPlayer("id1", "alice");
+			game.addPlayer("id2", "bob");
+			game.start();
+			game.removePlayer("id1");
+			const winner = game.checkWinnerAfterLeave();
+			expect(winner?.id).toBe("id2");
+			expect(game.status).toBe("finished");
+		});
+		it("does nothing for a solo game", () => {
+			game.addPlayer("id1", "alice");
+			game.start();
+			game.removePlayer("id1");
+			expect(game.checkWinnerAfterLeave()).toBeNull();
+		});
+		it("does nothing when the game is not playing", () => {
+			game.addPlayer("id1", "alice");
+			game.addPlayer("id2", "bob");
+			game.removePlayer("id1");
+			expect(game.checkWinnerAfterLeave()).toBeNull();
+		});
+		it("does nothing while 2+ players are still alive", () => {
+			game.addPlayer("id1", "alice");
+			game.addPlayer("id2", "bob");
+			game.addPlayer("id3", "carol");
+			game.start();
+			game.removePlayer("id1");
+			expect(game.checkWinnerAfterLeave()).toBeNull();
+			expect(game.status).toBe("playing");
+		});
+		it("eliminatePlayer is ignored once the game is finished", () => {
+			game.addPlayer("id1", "alice");
+			game.addPlayer("id2", "bob");
+			game.start();
+			game.eliminatePlayer("id1");
+			expect(game.eliminatePlayer("id2")).toBeNull();
+		});
+	});
 });

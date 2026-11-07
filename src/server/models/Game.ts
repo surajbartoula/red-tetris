@@ -10,6 +10,7 @@ export class Game {
 	public status: GameStatus;
 	private pieceGenerator: PieceGenerator;
 	private pieceSequence: PieceType[] = [];
+	private startedAsMultiplayer = false;
 
 	constructor(roomId: string) {
 		this.roomId = roomId;
@@ -68,13 +69,13 @@ export class Game {
 		if (this.players.length === 0) {
 			throw new Error("Cannot start an empty game");
 		}
-
+		this.startedAsMultiplayer = this.players.length > 1;
 		this.status = "playing";
 	}
 
 	public restart(): void {
 		this.status = "waiting";
-
+		this.startedAsMultiplayer = false;
 		this.pieceGenerator = new PieceGenerator();
 		this.pieceSequence = [];
 
@@ -85,6 +86,9 @@ export class Game {
 	}
 
 	public eliminatePlayer(playerId: string): Player | null {
+		if (this.status !== "playing") {
+			return null;
+		}
 		const player = this.players.find((currentPlayer) => currentPlayer.id === playerId);
 
 		if (!player) {
@@ -109,5 +113,17 @@ export class Game {
 
 	public getLeader(): Player | undefined {
 		return this.players.find((player) => player.isLeader);
+	}
+
+	public checkWinnerAfterLeave(): Player | null {
+		if (this.status !== "playing" || !this.startedAsMultiplayer) {
+			return null;
+		}
+		const alivePlayers = this.players.filter((player) => player.alive);
+		if (alivePlayers.length <= 1) {
+			this.status = "finished";
+			return alivePlayers[0] ?? null;
+		}
+		return null;
 	}
 }

@@ -35,7 +35,7 @@ export function registerGameHandlers(io: TypedServer, socket: TypedSocket): void
 		}
 
 		const newLeader = game.removePlayer(socket.id);
-
+		const winner = game.checkWinnerAfterLeave();
 		socket.to(roomId).emit("player_left", socket.id);
 
 		socket.leave(roomId);
@@ -45,7 +45,9 @@ export function registerGameHandlers(io: TypedServer, socket: TypedSocket): void
 		if (newLeader) {
 			io.to(roomId).emit("host_changed", newLeader.id);
 		}
-
+		if (winner) {
+			io.to(roomId).emit("game_over", winner.id);
+		}
 		gameManager.removeEmptyGame(roomId);
 
 		currentRoomId = null;
