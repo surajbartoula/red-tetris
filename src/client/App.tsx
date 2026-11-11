@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { HashRouter, Routes, Route, useParams, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useParams, Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "./store";
 import { setPending } from "./store/roomSlice";
@@ -54,12 +54,10 @@ const RoomRoute = () => {
 };
 
 export const App = () => (
-	<HashRouter>
-		{" "}
-		{/* ← was BrowserRouter */}
+	<BrowserRouter>
 		<Routes>
 			<Route path="/:room/:playerName" element={<RoomRoute />} />
 			<Route path="*" element={<LandingPage />} />
 		</Routes>
-	</HashRouter>
+	</BrowserRouter>
 );

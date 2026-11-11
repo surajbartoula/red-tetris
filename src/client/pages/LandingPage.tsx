@@ -136,7 +136,7 @@ export const LandingPage = () => {
 			</div>
 
 			<div style={{ color: "#333", fontSize: 12, textAlign: "center" }}>
-				or navigate directly to <span style={{ color: "#444" }}>/#/room/playername</span>
+				or navigate directly to <span style={{ color: "#444" }}>/room/playername</span>
 			</div>
 		</div>
 	);
